@@ -330,3 +330,5 @@ ASALocalRun/
 .mfractor/
 *.ncrunchsolution
 *.ncrunchproject
+/docs/_site
+/docs/api

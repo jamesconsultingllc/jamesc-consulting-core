@@ -1,0 +1,6 @@
+#logo {
+    width: auto; /* Set desired width */
+    height: 40px; /* Preserve aspect ratio */
+    /* or use height: 40px; for fixed height */
+    margin-right: 10px; /* Space between logo and text */
+}
