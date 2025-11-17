@@ -40,7 +40,7 @@ steps:
       version: '10.0.x'
       includePreviewVersions: true
 
-  - task: SonarCloudPrepare@1
+  - task: SonarCloudPrepare@2
     inputs:
       SonarCloud: 'James Consulting'
       organization: 'james-consulting-llc'
@@ -112,9 +112,9 @@ steps:
   #       --azure-key-vault-client-secret "$(ClientSecret)" `
   #       --azure-key-vault-certificate "jc-code-signing"
 
-  - task: SonarCloudAnalyze@1
+  - task: SonarCloudAnalyze@2
 
-  - task: SonarCloudPublish@1
+  - task: SonarCloudPublish@2
     inputs:
       pollingTimeoutSec: '300'
 
@@ -126,4 +126,3 @@ steps:
 
   - task: PublishBuildArtifacts@1
     displayName: 'Publish Artifact: drop'
-
