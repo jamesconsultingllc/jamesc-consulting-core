@@ -40,14 +40,6 @@ steps:
       version: '10.0.x'
       includePreviewVersions: true
 
-  - task: SonarCloudPrepare@2
-    inputs:
-      SonarCloud: 'James Consulting'
-      organization: 'james-consulting-llc'
-      scannerMode: 'MSBuild'
-      projectKey: '$(SonarKey)'
-      projectVersion: '2.0'
-
   - task: DotNetCoreCLI@2
     displayName: 'Restore (all TFMs)'
     inputs:
@@ -77,15 +69,6 @@ steps:
       projects: 'src/**/*.Tests/*.csproj'
       arguments: '--configuration $(buildConfiguration) --collect "Code coverage"'
 
-  # Optional separate net462 test run if needed (uncomment if DotNetCoreCLI test skips net462 framework):
-  # - task: VsTest@2
-  #   displayName: 'Run net462 tests'
-  #   inputs:
-  #     testAssemblyVer2: |
-  #       **/bin/$(buildConfiguration)/net462/*Tests.dll
-  #     searchFolder: 'src'
-  #     runInParallel: true
-
   - task: DotNetCoreCLI@2
     displayName: 'Pack (multi-target nupkg)'
     inputs:
@@ -96,33 +79,52 @@ steps:
       versionEnvVar: Version
       arguments: '--configuration $(buildConfiguration)'
 
-  # Code signing step (disabled). Enable when Key Vault cert is ready.
-  # - task: PowerShell@2
-  #   displayName: 'Code Sign NuGet Package'
-  #   inputs:
-  #     targetType: 'inline'
-  #     script: |
-  #       .\NuGetKeyVaultSignTool sign ./src/**/bin/$(buildConfiguration)/*.nupkg `
-  #       --file-digest "sha256" `
-  #       --timestamp-rfc3161 "http://ts.ssl.com" `
-  #       --timestamp-digest "sha256" `
-  #       --azure-key-vault-url "https://jc-code-signing.vault.azure.net/" `
-  #       --azure-key-vault-tenant-id "a2bc6fb5-fba9-40b4-9ecc-2acf61cae876" `
-  #       --azure-key-vault-client-id "$(ApplicationId)" `
-  #       --azure-key-vault-client-secret "$(ClientSecret)" `
-  #       --azure-key-vault-certificate "jc-code-signing"
-
-  - task: SonarCloudAnalyze@2
-
-  - task: SonarCloudPublish@2
-    inputs:
-      pollingTimeoutSec: '300'
-
   - task: CopyFiles@2
     displayName: 'Copy nupkg to Artifact Staging'
     inputs:
       Contents: 'src/**/bin/$(buildConfiguration)/*.nupkg'
       TargetFolder: '$(build.artifactstagingdirectory)'
+
+  - task: PowerShell@2
+  displayName: 'Code Sign NuGet Package with Azure TrustedSigning'
+  inputs:
+    targetType: 'inline'
+    script: |
+      $moduleName = "TrustedSigning"
+      if (-not (Get-Module -ListAvailable -Name $moduleName)) {
+          Write-Host "Installing TrustedSigning module..."
+          Install-Module -Name $moduleName -Force -Scope CurrentUser
+      }
+
+      $endpoint = "https://eus.codesigning.azure.net"
+      $accountName = "jc-ts-account"
+      $profileName = "Code-Signing"
+      $folder = "$env:BUILD_ARTIFACTSTAGINGDIRECTORY"
+      $filter = "nupkg"
+      $fileDigest = "SHA256"
+      $timestampUrl = "http://timestamp.acs.microsoft.com"
+      $timestampDigest = "SHA256"
+
+      $nupkgFiles = Get-ChildItem -Path $folder -Filter "*.nupkg" -Recurse
+
+      if ($nupkgFiles.Count -eq 0) {
+          Write-Host "No NuGet packages (.nupkg) found in $folder."
+          exit 0
+      }
+
+      Write-Host "Signing NuGet packages in $folder..."
+
+      Invoke-TrustedSigning `
+          -Endpoint $endpoint `
+          -CodeSigningAccountName $accountName `
+          -CertificateProfileName $profileName `
+          -FilesFolder $folder `
+          -FilesFolderFilter $filter `
+          -FileDigest $fileDigest `
+          -TimestampRfc3161 $timestampUrl `
+          -TimestampDigest $timestampDigest
+
+      Write-Host "Signing complete."
 
   - task: PublishBuildArtifacts@1
     displayName: 'Publish Artifact: drop'
