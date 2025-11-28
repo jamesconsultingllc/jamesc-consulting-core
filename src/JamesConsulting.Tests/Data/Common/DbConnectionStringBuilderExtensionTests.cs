@@ -42,7 +42,7 @@ namespace JamesConsulting.Tests.Data.Common
         [Fact]
         public void RemoveKeysThrowsArgumentExceptionWhenKeysIsEmpty()
         {
-            var exception = Assert.Throws<ArgumentException>(() => new DbConnectionStringBuilder().RemoveKeys([]));
+            var exception = Assert.Throws<ArgumentException>(() => new DbConnectionStringBuilder().RemoveKeys(new string[0]));
             exception.ParamName.Should().Be("keys");
         }
 
