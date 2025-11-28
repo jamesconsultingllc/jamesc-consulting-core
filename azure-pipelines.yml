@@ -86,45 +86,45 @@ steps:
       TargetFolder: '$(build.artifactstagingdirectory)'
 
   - task: PowerShell@2
-  displayName: 'Code Sign NuGet Package with Azure TrustedSigning'
-  inputs:
-    targetType: 'inline'
-    script: |
-      $moduleName = "TrustedSigning"
-      if (-not (Get-Module -ListAvailable -Name $moduleName)) {
-          Write-Host "Installing TrustedSigning module..."
-          Install-Module -Name $moduleName -Force -Scope CurrentUser
-      }
+    displayName: 'Code Sign NuGet Package with Azure TrustedSigning'
+    inputs:
+      targetType: 'inline'
+      script: |
+        $moduleName = "TrustedSigning"
+        if (-not (Get-Module -ListAvailable -Name $moduleName)) {
+            Write-Host "Installing TrustedSigning module..."
+            Install-Module -Name $moduleName -Force -Scope CurrentUser
+        }
 
-      $endpoint = "https://eus.codesigning.azure.net"
-      $accountName = "jc-ts-account"
-      $profileName = "Code-Signing"
-      $folder = "$env:BUILD_ARTIFACTSTAGINGDIRECTORY"
-      $filter = "nupkg"
-      $fileDigest = "SHA256"
-      $timestampUrl = "http://timestamp.acs.microsoft.com"
-      $timestampDigest = "SHA256"
+        $endpoint = "https://eus.codesigning.azure.net"
+        $accountName = "jc-ts-account"
+        $profileName = "Code-Signing"
+        $folder = "$env:BUILD_ARTIFACTSTAGINGDIRECTORY"
+        $filter = "nupkg"
+        $fileDigest = "SHA256"
+        $timestampUrl = "http://timestamp.acs.microsoft.com"
+        $timestampDigest = "SHA256"
 
-      $nupkgFiles = Get-ChildItem -Path $folder -Filter "*.nupkg" -Recurse
+        $nupkgFiles = Get-ChildItem -Path $folder -Filter "*.nupkg" -Recurse
 
-      if ($nupkgFiles.Count -eq 0) {
-          Write-Host "No NuGet packages (.nupkg) found in $folder."
-          exit 0
-      }
+        if ($nupkgFiles.Count -eq 0) {
+            Write-Host "No NuGet packages (.nupkg) found in $folder."
+            exit 0
+        }
 
-      Write-Host "Signing NuGet packages in $folder..."
+        Write-Host "Signing NuGet packages in $folder..."
 
-      Invoke-TrustedSigning `
-          -Endpoint $endpoint `
-          -CodeSigningAccountName $accountName `
-          -CertificateProfileName $profileName `
-          -FilesFolder $folder `
-          -FilesFolderFilter $filter `
-          -FileDigest $fileDigest `
-          -TimestampRfc3161 $timestampUrl `
-          -TimestampDigest $timestampDigest
+        Invoke-TrustedSigning `
+            -Endpoint $endpoint `
+            -CodeSigningAccountName $accountName `
+            -CertificateProfileName $profileName `
+            -FilesFolder $folder `
+            -FilesFolderFilter $filter `
+            -FileDigest $fileDigest `
+            -TimestampRfc3161 $timestampUrl `
+            -TimestampDigest $timestampDigest
 
-      Write-Host "Signing complete."
+        Write-Host "Signing complete."
 
   - task: PublishBuildArtifacts@1
     displayName: 'Publish Artifact: drop'
