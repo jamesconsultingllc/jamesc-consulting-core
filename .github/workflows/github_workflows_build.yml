@@ -12,7 +12,7 @@ permissions:
 
 env:
   BUILD_CONFIGURATION: Release
-  CODE_SIGNING_ENDPOINT: https://eus.codesigning.azure.net
+  CODE_SIGNING_ENDPOINT: https://wcus.codesigning.azure.net
   CODE_SIGNING_ACCOUNT: jc-ts-account
   CODE_SIGNING_PROFILE: Code-Signing
   TIMESTAMP_URL: http://timestamp.acs.microsoft.com
