@@ -46,19 +46,6 @@ jobs:
       - name: Test
         run: dotnet test src --configuration $env:BUILD_CONFIGURATION --no-build --verbosity normal
 
-      - name: Pack
-        run: |
-          $staging = "${{ github.workspace }}/staging"
-          New-Item -ItemType Directory -Path $staging -Force | Out-Null
-          dotnet pack src/JamesConsulting/JamesConsulting.csproj --configuration $env:BUILD_CONFIGURATION --no-build -o $staging
-        shell: pwsh
-
-      - name: Show Derived Version
-        run: |
-          dotnet tool install --global nbgv
-          nbgv get-version
-        shell: pwsh
-
       - name: Azure login (OIDC)
         uses: azure/login@v2
         with:
@@ -66,15 +53,15 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Sign NuGet Packages
+      - name: Sign DLLs
         uses: azure/trusted-signing-action@v0
         with:
           endpoint: ${{ env.CODE_SIGNING_ENDPOINT }}
           trusted-signing-account-name: ${{ env.CODE_SIGNING_ACCOUNT }}
           certificate-profile-name: ${{ env.CODE_SIGNING_PROFILE }}
-          files-folder: ${{ github.workspace }}/staging
-          files-folder-filter: nupkg
-          files-folder-recurse: false
+          files-folder: ${{ github.workspace }}/src/JamesConsulting/bin/${{ env.BUILD_CONFIGURATION }}
+          files-folder-filter: dll
+          files-folder-recurse: true
           file-digest: SHA256
           timestamp-rfc3161: ${{ env.TIMESTAMP_URL }}
           timestamp-digest: SHA256
@@ -88,6 +75,19 @@ jobs:
           exclude-azure-powershell-credential: true
           exclude-azure-developer-cli-credential: true
           exclude-interactive-browser-credential: true
+
+      - name: Pack with Signed DLLs
+        run: |
+          $staging = "${{ github.workspace }}/staging"
+          New-Item -ItemType Directory -Path $staging -Force | Out-Null
+          dotnet pack src/JamesConsulting/JamesConsulting.csproj --configuration $env:BUILD_CONFIGURATION --no-build -o $staging
+        shell: pwsh
+
+      - name: Show Derived Version
+        run: |
+          dotnet tool install --global nbgv
+          nbgv get-version
+        shell: pwsh
 
       - name: Upload Signed Artifacts
         uses: actions/upload-artifact@v4
