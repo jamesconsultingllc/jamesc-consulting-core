@@ -50,7 +50,7 @@ jobs:
         run: |
           $staging = "${{ github.workspace }}/staging"
           New-Item -ItemType Directory -Path $staging -Force | Out-Null
-          dotnet pack src/**/JamesConsulting.csproj --configuration $env:BUILD_CONFIGURATION --no-build -o $staging
+          dotnet pack src/JamesConsulting/JamesConsulting.csproj --configuration $env:BUILD_CONFIGURATION --no-build -o $staging
         shell: pwsh
 
       - name: Show Derived Version
